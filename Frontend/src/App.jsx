@@ -1,17 +1,18 @@
-import HomePage from "./components/HomePage"
-import Navbar from "./components/Navbar"
 import { Routes, Route, Navigate } from "react-router-dom"
 import { Loader } from "lucide-react"
 import { Toaster } from "react-hot-toast"
-
-
-import SignupPage from "./components/SignupPage"
-import SettingsPage from "./components/SettingsPage"
-import LoginPage from "./components/LoginPage"
-import ProfilePage from "./components/ProfilePage"
-import { useAuthStore } from "./store/useAuthStore"
 import { useEffect } from "react"
+
+
+import HomePage from "./pages/HomePage"
+import Navbar from "./pages/Navbar"
+import SignupPage from "./pages/SignupPage"
+import SettingsPage from "./pages/SettingsPage"
+import LoginPage from "./pages/LoginPage"
+import ProfilePage from "./pages/ProfilePage"
+import { useAuthStore } from "./store/useAuthStore"
 import { useThemeStore } from "./store/useThemeStore"
+
 
 
 function App() {
