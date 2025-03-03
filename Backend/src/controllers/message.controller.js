@@ -1,6 +1,7 @@
 import cloudinary from "../configs/cloudinary.config.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
+import { errorResponse, successResponse } from "../utils/responseHandler.js";
 
 export const getUsersForSideBar = async (req, res) => {
   try {
@@ -22,19 +23,16 @@ export const getUsersForSideBar = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const { id: userToChatId } = req.params;
-    const myId = req.user.id;
-    const message = await Message.find({
-      $or: [
-        { senderId: myId, receiverId: userToChatId },
-        { senderId: userToChatId, receiverId: myId },
-      ],
-    });
+    const { id: projectId } = req.params;
+    const messages = await Message.find({ projectId })
+      .populate("senderId", "fullName profilePic") // Fetch only needed fields
+      .sort({ createdAt: 1 });
+
     return successResponse(
       res,
       200,
       "Successfully fetched all messages",
-      message
+      messages
     );
   } catch (error) {
     return errorResponse(res, 500, "Something went wrong", error);
@@ -44,7 +42,7 @@ export const getMessages = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { image, text } = req.body;
-    const { id: receiverId } = req.params;
+    const { projectId } = req.params;
     const senderId = req.user.id;
 
     let imageUrl;
@@ -55,12 +53,15 @@ export const sendMessage = async (req, res) => {
 
     const newMessage = new Message({
       senderId,
-      receiverId,
+      projectId,
       text,
       image: imageUrl,
     });
     await newMessage.save();
-    return successResponse(res, 201, "Successfully sent a message", newMessage);
+    const populatedMessage = await Message.findById(newMessage._id)
+    .populate("senderId", "fullName profilePic");
+    
+    return successResponse(res, 201, "Successfully sent a message", populatedMessage);
   } catch (error) {
     return errorResponse(res, 500, "Something went wrong", error);
   }

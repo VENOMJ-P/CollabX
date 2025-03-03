@@ -7,9 +7,9 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    receiverId: {
+    projectId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Project",
       required: true,
     },
     text: {
@@ -17,7 +17,7 @@ const messageSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-    },
+    }
   },
   { timestamps: true }
 );
