@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useProjectStore } from "./useProjectStore";
+import { useAuthStore } from "./useAuthStore";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -24,7 +25,6 @@ export const useChatStore = create((set, get) => ({
   getMessages: async (projectId) => {
     set({ isMessagesLoading: true });
     try {
-      console.log(projectId)
       const res = await axiosInstance.get(`/messages/${projectId}`);
       set({ messages: res.data.data });
     } catch (error) {
@@ -37,12 +37,34 @@ export const useChatStore = create((set, get) => ({
     const { messages } = get();
     // const selectedProject = useProjectStore.getState().selectedProject;
     try {
-      console.log(selectedProject,messages)
       const res = await axiosInstance.post(`/messages/send/${selectedProject}`,messageData);
-      console.log("this",res.data.data);
       set({messages:[...messages,res.data.data]});
     } catch (error) {
       toast.error(error.response.data.message);
     }
+  },
+
+  subscribeToMessages: () => {
+    const selectedProject = useProjectStore.getState().selectedProject;
+    if (!selectedProject) return;
+    const socket = useAuthStore.getState().socket;
+  
+    const handleMessage = (message) => {
+      if (message.projectId !== selectedProject) return;
+      console.log("New message received:", message);
+      set((state) => ({ messages: [...state.messages, message] }));
+    };
+  
+    socket.on("newMessage", handleMessage);
+  
+    return () => {
+      socket?.off("newMessage", handleMessage);
+    };
+  },
+  
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    socket?.off("newMessage");
   }
+  
 }));

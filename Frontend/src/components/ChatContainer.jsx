@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Send, Camera, Users } from 'lucide-react';
 import { useProjectStore } from '../store/useProjectStore';
 import { useChatStore } from "../store/useChatStore";
@@ -9,13 +9,23 @@ import { useAuthStore } from '../store/useAuthStore';
 import { formatMessageTime } from '../lib/utils';
 
 const ChatPanel = () => {
-    const { getMessages, messages, isMessageLoading } = useChatStore();
+    const { getMessages, messages, isMessageLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
     const { selectedProject } = useProjectStore();
     const { authUser } = useAuthStore();
 
+    const messageEndRef = useRef(null);
+
     useEffect(() => {
+        getMessages(selectedProject._id);
         fetchMessage();
-    }, [selectedProject._id]);  // Added dependency on selectedProject._id
+        return () => unsubscribeFromMessages();
+    }, [selectedProject._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);  // Added dependency on selectedProject._id
+
+    useEffect(() => {
+        if (messageEndRef.current && messages) {
+            messageEndRef.current.scrollIntoView({ behavior: "smooth" })
+        }
+    }, [messages])
 
     const fetchMessage = async () => {
         await getMessages(selectedProject._id);
@@ -37,7 +47,7 @@ const ChatPanel = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {console.log("auth", authUser.data._id)}
                 {messages.map((message) => (
-                    <div key={message._id} className={`chat ${message.senderId._id === authUser.data._id ? "chat-end" : "chat-start"}`}>
+                    <div key={message._id} className={`chat ${message.senderId._id === authUser.data._id ? "chat-end" : "chat-start"}`} ref={messageEndRef}>
                         <div className='chat-image avatar'>
                             <div className='size-10 rounded-full border'>
                                 <img src={message?.senderId.profilePic || "./avatar.png"} alt="profile pic" />
@@ -62,7 +72,7 @@ const ChatPanel = () => {
                 ))}
             </div>
             <MessageInput />
-        </div>
+        </div >
     );
 };
 
