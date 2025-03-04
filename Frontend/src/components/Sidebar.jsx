@@ -33,12 +33,10 @@ const Sidebar = () => {
                             </p>
                             <p className="flex items-center space-x-3">
                                 <Users />
-                                <span><small>Collaborators: </small>{project?.users.length || 0}</span>
+                                <span><small>Collaborators: </small>{project?.users?.length || 0}</span>
                             </p>
                         </span>
                     </button>
-
-
                 ))}
 
 

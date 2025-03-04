@@ -87,7 +87,7 @@ export const useAuthStore = create((set,get) => ({
     const selectedProject=useProjectStore.getState().selectedProject
     if(!authUser || get().socket?.connected|| !selectedProject) return;
 
-    console.log("connectSOcket", authUser)
+    console.log("connectSocket", authUser)
 
     const socket=io(BASE_URL,{
       withCredentials:true,

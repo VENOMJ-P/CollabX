@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios.js";
+import { useUserPanelStore } from "./useUserPanelStore.js";
 
 export const useProjectStore = create((set, get) => ({
   projects: [],
@@ -9,12 +10,13 @@ export const useProjectStore = create((set, get) => ({
   isCreatingProject: false,
   isProjectLoading:false,
   isUserLoading:false,
+  isAddingCollaborators: false,
 
   fetchProjectsUser:async(projectId)=>{
     set({isUserLoading:true});
     try {
       const res = await axiosInstance.get(`/projects/${projectId}`);
-      console.log(res.data)
+      console.log("project User",res.data)
       set({ users: res.data });
     } catch (error) {
       toast.error("Failed to fetch projects");
@@ -50,5 +52,23 @@ export const useProjectStore = create((set, get) => ({
     }
   },
 
-  setSelectedProject:(selectedProject)=>set({selectedProject})
+  setSelectedProject:(selectedProject)=>set({selectedProject}),
+
+  addCollaborators: async (projectId, emails) => {
+    set({ isAddingCollaborators: true });
+    try {
+      const response = await axiosInstance.put(`/projects/add-users`, {
+        projectId: projectId,
+        emails: emails
+      });
+      // await get().fetchProjectsUser(projectId);
+      await useUserPanelStore.getState().fetchUserDetails(projectId)
+      toast.success("Collaborators added successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add collaborators");
+      throw error;
+    } finally {
+      set({ isAddingCollaborators: false });
+    }
+  }
 }));
