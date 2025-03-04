@@ -2,11 +2,12 @@ import { Plus, Users, Workflow } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import CreateProjectModal from './CreateProjectModal';
 import { useProjectStore } from "../store/useProjectStore";
+import { useUserPanelStore } from '../store/useUserPanelStore';
 
 const Sidebar = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { projects, fetchProjects, selectedProject, setSelectedProject } = useProjectStore();
-
+    const { closeUserPanel } = useUserPanelStore();
     useEffect(() => {
         fetchProjects(); // Fetch projects on mount
     }, []);
@@ -14,11 +15,11 @@ const Sidebar = () => {
 
     return (
         <>
-            <div className="w-16 bg-base-200 flex flex-col items-center py-2 border-r border-base-300  ">
+            <div className="w-16 bg-base-200 flex flex-col items-center py-2 border-r border-base-300 z-89">
                 {projects.map((project) => (
                     <button
                         key={project?._id}
-                        onClick={() => setSelectedProject(project)}
+                        onClick={() => { setSelectedProject(project); closeUserPanel() }}
                         className="relative bg-primary/60 hover:bg-primary/30 p-4.5 m-3 rounded-md border-accent transition duration-500 ease-in-out transform hover:scale-105 group"
                         aria-label={project?.name || "Unnamed Project"}
                     >

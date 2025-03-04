@@ -5,7 +5,7 @@ import CollaboratorsPanel from '../components/CollaboratorsPanel';
 // import CodeEditor from '../components/CodeEditor';
 import { useProjectStore } from '../store/useProjectStore';
 import NoChatSelected from '../components/NoChatSelected';
-import ChatPanel from '../components/ChatContainer';
+import ChatPanel from '../components/ChatPanel';
 
 const HomePage = () => {
   const { selectedProject } = useProjectStore();

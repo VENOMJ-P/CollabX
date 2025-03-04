@@ -1,9 +1,11 @@
 import { Users, X } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useProjectStore } from "../store/useProjectStore";
+import { useUserPanelStore } from "../store/useUserPanelStore";
 
 const ChatHeader = () => {
     const { selectedProject, setSelectedProject } = useProjectStore();
+    const { setIsShowUserPanel, isShowUserPanel } = useUserPanelStore();
 
     return (
         <div className="p-4 border-b border-base-300 bg-base-100 shadow-sm">
@@ -19,9 +21,9 @@ const ChatHeader = () => {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <div className="flex-1">
+                    <button className="flex-1" onClick={() => setIsShowUserPanel(true)}>
                         <Users />
-                    </div>
+                    </button>
                     <button
                         className="p-2 rounded-full hover:bg-base-200 transition-colors"
                         onClick={() => setSelectedProject(null)}
