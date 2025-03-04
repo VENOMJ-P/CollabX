@@ -97,7 +97,7 @@ export const getUsers=async(req,res)=>{
         const loggedInUserId = req.user.id;
 
         // Find the project and populate users
-        const project = await Project.findById(projectId).populate("users", "name email");
+        const project = await Project.findById(projectId).populate("users", "fullName email profilePic ");
 
         if (!project) {
             return errorResponse(res, 404, "Project not found");
