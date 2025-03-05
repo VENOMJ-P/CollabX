@@ -35,17 +35,21 @@ export const useChatStore = create((set, get) => ({
   },
   sendMessage: async(messageData,selectedProject)=>{
     const { messages } = get();
-    // const selectedProject = useProjectStore.getState().selectedProject;
     try {
+      set({ isChatLoading: true });
       const res = await axiosInstance.post(`/messages/send/${selectedProject}`,messageData);
-      set({messages:[...messages,res.data.data]});
+      set({
+        messages:[...messages,res.data.data],
+        // chatData: res.data.data
+      });
     } catch (error) {
       toast.error(error.response.data.message);
+    } finally {
+      set({ isChatLoading: false });
     }
   },
 
   subscribeToMessages: (selectedProject) => {
-    // const selectedProject = useProjectStore.getState().selectedProject;
     if (!selectedProject) return;
     
     const socket = useAuthStore.getState().socket;
@@ -59,7 +63,7 @@ export const useChatStore = create((set, get) => ({
       set((state) => ({ messages: [...state.messages, message] }));
     };
 
-    socket.emit("joinProject", selectedProject._id); // Ensure the user joins the correct project room
+    socket.emit("joinProject", selectedProject._id);
     socket.on("newMessage", handleMessage);
 
     return () => {
@@ -67,13 +71,28 @@ export const useChatStore = create((set, get) => ({
     };
   },
 
-  
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (socket) {
-      socket.emit("leaveProject"); // Leave the project room on disconnect
+      socket.emit("leaveProject");
       socket.off("newMessage");
     }
-  }
+  },
+  jsonFormatter: (message)=> {
+    let cleanedText = message?.text || "";
+
+    cleanedText = cleanedText
+        .replace(/^```json\n/, '')
+        .replace(/\n```\n$/, '')
+        .trim();
+
+    let jsonObject = {};
+    try {
+        jsonObject = JSON.parse(cleanedText);
+    } catch (error) {
+        console.error("Error parsing JSON:", error);
+    }
+    return jsonObject;
+}
   
 }));

@@ -13,6 +13,29 @@ import { formatMessageTime } from '../lib/utils';
 import { useUserPanelStore } from '../store/useUserPanelStore';
 import UserPanel from './UserPanel';
 
+function jsonFormatter(message) {
+    let cleanedText = message || "";
+
+    try {
+        // Check if message starts and ends with JSON markers
+        cleanedText = cleanedText
+            .replace(/^```json\n/, '')  // Remove opening code block
+            .replace(/\n```\n$/, '')      // Remove closing code block
+            .trim();
+
+
+
+        const jsonObject = JSON.parse(cleanedText);
+        // JSON.stringify(jsonObject, null, 2); // Extract text or return formatted JSON
+        console.log(message, cleanedText, jsonObject)
+        return jsonObject;
+    } catch (error) {
+        console.error("Error parsing JSON:", error);
+        return null; // Return original text if parsing fails
+    }
+}
+
+
 const ChatPanel = () => {
     const { getMessages, messages, isMessageLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
     const { selectedProject } = useProjectStore();
@@ -25,7 +48,7 @@ const ChatPanel = () => {
     useEffect(() => {
         if (selectedProject?._id) { // Check if selectedProject exists to avoid errors
             getMessages(selectedProject._id);
-            fetchMessage();
+            // fetchMessage();
             subscribeToMessages(selectedProject._id);
             return () => unsubscribeFromMessages();
         }
@@ -51,6 +74,51 @@ const ChatPanel = () => {
                 <MessageInput />
             </div>
         );
+    }
+
+    function WriteAiMessage(message) {
+
+        const messageObject = jsonFormatter(message)
+        if (!messageObject) {
+            // If not valid JSON, just render the message as plain text.
+            return (
+                <div className='overflow-auto rounded-sm p-2'>
+                    <p>{message}</p>
+                </div>
+            );
+        }
+
+        return (
+            <div
+                className='overflow-auto rounded-sm p-2'
+            >
+                <Markdown
+                    options={{
+                        overrides: {
+                            code: {
+                                component: ({ className, children }) => {
+                                    const language = className?.replace("lang-", "") || "javascript";
+                                    return (
+                                        <SyntaxHighlighter
+                                            style={materialOceanic} // Use your desired syntax highlighting theme
+                                            language={language}
+                                            PreTag="div"
+                                        >
+                                            {children}
+                                        </SyntaxHighlighter>
+                                    );
+                                },
+                            },
+                        },
+                    }}
+                >
+                </Markdown>
+                {console.log(messageObject.text)}
+                {/* {messageObject.text} */}
+                {messageObject && messageObject.text}
+            </div>)
+
+
     }
 
     return (
@@ -104,28 +172,31 @@ const ChatPanel = () => {
                                             {message.senderId.email === AI ? (
                                                 // Render markdown as JSX for AI messages
                                                 // Render markdown as JSX with syntax highlighting
-                                                <Markdown
-                                                    options={{
-                                                        overrides: {
-                                                            code: {
-                                                                component: ({ className, children }) => {
-                                                                    const language = className?.replace("lang-", "") || "javascript";
-                                                                    return (
-                                                                        <SyntaxHighlighter
-                                                                            style={materialOceanic} // Use your desired syntax highlighting theme
-                                                                            language={language}
-                                                                            PreTag="div"
-                                                                        >
-                                                                            {children}
-                                                                        </SyntaxHighlighter>
-                                                                    );
-                                                                },
-                                                            },
-                                                        },
-                                                    }}
-                                                >
-                                                    {message.text}
-                                                </Markdown>
+                                                // <Markdown
+                                                //     options={{
+                                                //         overrides: {
+                                                //             code: {
+                                                //                 component: ({ className, children }) => {
+                                                //                     const language = className?.replace("lang-", "") || "javascript";
+                                                //                     return (
+                                                //                         <SyntaxHighlighter
+                                                //                             style={materialOceanic} // Use your desired syntax highlighting theme
+                                                //                             language={language}
+                                                //                             PreTag="div"
+                                                //                         >
+                                                //                             {children}
+                                                //                         </SyntaxHighlighter>
+                                                //                     );
+                                                //                 },
+                                                //             },
+                                                //         },
+                                                //     }}
+                                                // >
+
+                                                //     {jsonFormatter(message)?.text || "Invalid JSON "}
+
+                                                // </Markdown>
+                                                WriteAiMessage(message.text)
                                             ) : (
                                                 // Render plain text for regular messages
                                                 <p>{message.text}</p>
@@ -135,16 +206,19 @@ const ChatPanel = () => {
                                 </div>
 
                                 {/* Scroll reference added to the last message */}
-                                {messages[messages.length - 1]?._id === message._id && (
-                                    <div ref={messageEndRef} />
-                                )}
+                                {
+                                    messages[messages.length - 1]?._id === message._id && (
+                                        <div ref={messageEndRef} />
+                                    )
+                                }
                             </div>
                         ))}
                     </div>
                     <MessageInput />
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 

@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
 import { GOOGLE_AI_KEY } from "../configs/server.config.js";
 import { SYSTEM_INSTRUCTION } from "../configs/ai.prompt.js";
 
@@ -36,7 +35,9 @@ export const generateResult = async ({ prompt, image }) => {
 
     // Send text + optional image to AI model
     const inputPayload = image_prompt ? [prompt, image_prompt] : [prompt];
+    console.log("input",inputPayload,prompt)
     const result = await model.generateContent(inputPayload);
+    console.log("result",result)
 
     // Extract AI-generated response
     const generatedResponse = result?.response?.text();
