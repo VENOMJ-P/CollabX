@@ -73,7 +73,6 @@ export const sendMessage = async (req, res) => {
       "fullName profilePic"
     );
 
-    // 🔹 Emit message event **only once** (avoid duplicate)
     io.to(projectId).emit("newMessage", populatedMessage);
 
     return successResponse(res, 201, "Message sent successfully", populatedMessage);
