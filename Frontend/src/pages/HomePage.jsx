@@ -1,8 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
-import CollaboratorsPanel from '../components/CollaboratorsPanel';
 // import ChatPanel from '../components/ChatPanel';
-// import CodeEditor from '../components/CodeEditor';
+import CodeEditor from '../components/CodeEditor';
 import { useProjectStore } from '../store/useProjectStore';
 import NoChatSelected from '../components/NoChatSelected';
 import ChatPanel from '../components/ChatPanel';
@@ -23,12 +22,13 @@ const HomePage = () => {
         <div className="bg-base-100  border-1 border-base-300 rounded-lg shadow-cl w-full max-w-0.5xl h-[calc(100vh-6rem)]">
           <div className="flex h-full rounded-lg overflow-hidden">
             <Sidebar />
-            {!selectedProject ? <NoChatSelected /> : <><ChatPanel />
-            </>}
-            {/* <CollaboratorsPanel /> */}
-            {/* <ChatPanel /> */}
+            {!selectedProject ?
+              <NoChatSelected /> :
+              <>
+                <ChatPanel />
+              </>
+            }
             {/* <CodeEditor /> */}
-
           </div>
         </div>
       </div>
