@@ -55,13 +55,13 @@ const UserPanel = () => {
         <div className="flex-1 flex flex-col overflow-auto p-4">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">User Details</h2>
-                <button
+                {/* <button
                     className="p-2 rounded-full hover:bg-base-200 transition-colors"
                     onClick={() => closeUserPanel()}
                     aria-label="Close"
                 >
                     <X size={18} />
-                </button>
+                </button> */}
             </div>
             {userDetails ? userDetails.map((user) => (
                 <div key={user._id} className="flex flex-col overflow-auto">

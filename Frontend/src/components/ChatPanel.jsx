@@ -21,6 +21,7 @@ const ChatPanel = () => {
     useEffect(() => {
         getMessages(selectedProject._id);
         fetchMessage();
+        subscribeToMessages(selectedProject._id);
         return () => unsubscribeFromMessages();
     }, [selectedProject._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);  // Added dependency on selectedProject._id
 
@@ -80,7 +81,12 @@ const ChatPanel = () => {
                                             className="sm:max-w-[200px] rounded-md mb-2"
                                         />
                                     )}
-                                    {message.text && <p>{message.text}</p>}
+                                    {/* {message.text && <p>{message.text}</p>} */}
+                                    {message.text && (
+                                        <p className="break-words max-w-full text-left">
+                                            {message.text}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         ))}

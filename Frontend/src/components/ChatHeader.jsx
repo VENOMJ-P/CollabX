@@ -21,7 +21,7 @@ const ChatHeader = () => {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    <button className="flex-1" onClick={() => setIsShowUserPanel(true)}>
+                    <button className="flex-1" onClick={() => setIsShowUserPanel(!isShowUserPanel)}>
                         <Users />
                     </button>
                     <button

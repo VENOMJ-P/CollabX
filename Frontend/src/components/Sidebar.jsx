@@ -3,10 +3,13 @@ import React, { useEffect, useState } from 'react';
 import CreateProjectModal from './CreateProjectModal';
 import { useProjectStore } from "../store/useProjectStore";
 import { useUserPanelStore } from '../store/useUserPanelStore';
+import { useChatStore } from '../store/useChatStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Sidebar = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { projects, fetchProjects, selectedProject, setSelectedProject } = useProjectStore();
+    const { connectSocket, disconnectSocket } = useAuthStore();
     const { closeUserPanel } = useUserPanelStore();
     useEffect(() => {
         fetchProjects(); // Fetch projects on mount
@@ -19,7 +22,14 @@ const Sidebar = () => {
                 {projects.map((project) => (
                     <button
                         key={project?._id}
-                        onClick={() => { setSelectedProject(project); closeUserPanel() }}
+                        onClick={() => {
+                            if (selectedProject?._id !== project?._id) {
+                                disconnectSocket();  // Disconnect from previous project
+                                setSelectedProject(project);
+                                closeUserPanel();
+                                connectSocket(); // Connect to the new project
+                            }
+                        }}
                         className="relative bg-primary/60 hover:bg-primary/30 p-4.5 m-3 rounded-md border-accent transition duration-500 ease-in-out transform hover:scale-105 group"
                         aria-label={project?.name || "Unnamed Project"}
                     >

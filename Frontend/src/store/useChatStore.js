@@ -44,27 +44,36 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  subscribeToMessages: () => {
-    const selectedProject = useProjectStore.getState().selectedProject;
+  subscribeToMessages: (selectedProject) => {
+    // const selectedProject = useProjectStore.getState().selectedProject;
     if (!selectedProject) return;
+    
     const socket = useAuthStore.getState().socket;
-  
+    if (!socket) {
+      console.error("Socket is not connected");
+      return;
+    }
+
     const handleMessage = (message) => {
-      if (message.projectId !== selectedProject) return;
-      console.log("New message received:", message);
+      console.log("New message received: ", message);
       set((state) => ({ messages: [...state.messages, message] }));
     };
-  
+
+    socket.emit("joinProject", selectedProject._id); // Ensure the user joins the correct project room
     socket.on("newMessage", handleMessage);
-  
+
     return () => {
-      socket?.off("newMessage", handleMessage);
+      socket.off("newMessage", handleMessage);
     };
   },
+
   
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
-    socket?.off("newMessage");
+    if (socket) {
+      socket.emit("leaveProject"); // Leave the project room on disconnect
+      socket.off("newMessage");
+    }
   }
   
 }));
