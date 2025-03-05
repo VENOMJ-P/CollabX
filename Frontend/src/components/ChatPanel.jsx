@@ -1,5 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Send, Camera, Users } from 'lucide-react';
+import Markdown from "markdown-to-jsx";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { materialOceanic } from "react-syntax-highlighter/dist/esm/styles/prism"
 import { useProjectStore } from '../store/useProjectStore';
 import { useChatStore } from "../store/useChatStore";
 import ChatHeader from './ChatHeader';
@@ -15,29 +18,34 @@ const ChatPanel = () => {
     const { selectedProject } = useProjectStore();
     const { authUser } = useAuthStore();
     const { isShowUserPanel } = useUserPanelStore();
+    const AI = "ai@gmail.com";
 
     const messageEndRef = useRef(null);
 
     useEffect(() => {
-        getMessages(selectedProject._id);
-        fetchMessage();
-        subscribeToMessages(selectedProject._id);
-        return () => unsubscribeFromMessages();
-    }, [selectedProject._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);  // Added dependency on selectedProject._id
+        if (selectedProject?._id) { // Check if selectedProject exists to avoid errors
+            getMessages(selectedProject._id);
+            fetchMessage();
+            subscribeToMessages(selectedProject._id);
+            return () => unsubscribeFromMessages();
+        }
+    }, [selectedProject?._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
     useEffect(() => {
-        if (messageEndRef.current && messages) {
-            messageEndRef.current.scrollIntoView({ behavior: "smooth" })
+        if (messageEndRef.current && messages.length > 0) {
+            messageEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages, isShowUserPanel])
+    }, [messages, isShowUserPanel]);
 
     const fetchMessage = async () => {
-        await getMessages(selectedProject._id);
+        if (selectedProject?._id) { // Additional null-check for safety
+            await getMessages(selectedProject._id);
+        }
     };
 
     if (isMessageLoading) {
         return (
-            <div className='flex-1 flex flex-col overflow-auto'>
+            <div className="flex-1 flex flex-col overflow-auto">
                 <ChatHeader />
                 <MessageSkeleton />
                 <MessageInput />
@@ -52,13 +60,12 @@ const ChatPanel = () => {
                 <UserPanel />
             ) : (
                 <>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.map((message, index) => (
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                        {messages.map((message) => (
                             <div
                                 key={message._id}
                                 className={`chat ${message.senderId._id === authUser.data._id ? "chat-end" : "chat-start"
                                     }`}
-                                ref={messageEndRef}
                             >
                                 <div className="chat-image avatar">
                                     <div className="size-12 rounded-full border">
@@ -79,6 +86,7 @@ const ChatPanel = () => {
                                     )}
                                 </div>
 
+
                                 <div className="chat-bubble flex flex-col">
                                     {message.image && (
                                         <img
@@ -88,24 +96,56 @@ const ChatPanel = () => {
                                         />
                                     )}
 
-                                    {/* {message.text && <p>{message.text}</p>} */}
                                     {message.text && (
-                                        <p className="break-words max-w-full text-left">
-                                            {message.text}
-                                        </p>
+                                        <div
+                                            className={`break-words max-w-full text-left 
+                        overflow-y-auto no-scrollbar`} // Limit height and add scrolling
+                                        >
+                                            {message.senderId.email === AI ? (
+                                                // Render markdown as JSX for AI messages
+                                                // Render markdown as JSX with syntax highlighting
+                                                <Markdown
+                                                    options={{
+                                                        overrides: {
+                                                            code: {
+                                                                component: ({ className, children }) => {
+                                                                    const language = className?.replace("lang-", "") || "javascript";
+                                                                    return (
+                                                                        <SyntaxHighlighter
+                                                                            style={materialOceanic} // Use your desired syntax highlighting theme
+                                                                            language={language}
+                                                                            PreTag="div"
+                                                                        >
+                                                                            {children}
+                                                                        </SyntaxHighlighter>
+                                                                    );
+                                                                },
+                                                            },
+                                                        },
+                                                    }}
+                                                >
+                                                    {message.text}
+                                                </Markdown>
+                                            ) : (
+                                                // Render plain text for regular messages
+                                                <p>{message.text}</p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
+
+                                {/* Scroll reference added to the last message */}
+                                {messages[messages.length - 1]?._id === message._id && (
+                                    <div ref={messageEndRef} />
+                                )}
                             </div>
                         ))}
                     </div>
                     <MessageInput />
                 </>
             )}
-
         </div>
     );
-
 };
 
 export default ChatPanel;
-
