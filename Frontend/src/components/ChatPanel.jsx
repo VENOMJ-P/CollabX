@@ -69,10 +69,16 @@ const ChatPanel = () => {
                                     </div>
                                 </div>
                                 <div className="chat-header mb-1">
-                                    <time className="text-xs opacity-50 ml-1">
+                                    <time className="text-xs opacity-50 m-1">
                                         {formatMessageTime(message.createdAt)}
                                     </time>
+                                    {message.senderId?.fullName && (
+                                        <span className="text-accent font-medium rounded-md m-1">
+                                            {message.senderId.fullName}
+                                        </span>
+                                    )}
                                 </div>
+
                                 <div className="chat-bubble flex flex-col">
                                     {message.image && (
                                         <img
@@ -81,6 +87,7 @@ const ChatPanel = () => {
                                             className="sm:max-w-[200px] rounded-md mb-2"
                                         />
                                     )}
+
                                     {/* {message.text && <p>{message.text}</p>} */}
                                     {message.text && (
                                         <p className="break-words max-w-full text-left">

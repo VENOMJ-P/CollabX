@@ -17,6 +17,13 @@ const MessageInput = () => {
             toast.error("Please select an image file");
             return;
         }
+        console.log(file, file.size)
+        // Check if the file size exceeds 5MB
+        // const fileSizeInMB = file.size / 1024; // Convert size from bytes to MB
+        if (file.size > 1000000) {
+            toast.error("Image size exceeds 1MB. Please select a smaller file.");
+            return;
+        }
 
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -35,7 +42,11 @@ const MessageInput = () => {
         if (!text.trim() && !imagePreview) return;
 
         try {
-            console.log("asdfklj", selectedProject, selectedProject._id)
+
+            if (text.length > 1000000) {
+                toast.error("Message is too large must be under 1MB!");
+            }
+
             await sendMessage({
                 text: text.trim(),
                 image: imagePreview,
