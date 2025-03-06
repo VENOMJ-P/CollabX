@@ -5,6 +5,10 @@ import { SYSTEM_INSTRUCTION } from "../configs/ai.prompt.js";
 const genAI = new GoogleGenerativeAI(GOOGLE_AI_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
+  generationConfig: {
+    responseMimeType: "application/json",
+    temperature: 0.4,
+},
   systemInstruction: SYSTEM_INSTRUCTION,
 });
 
