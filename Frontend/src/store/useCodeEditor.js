@@ -25,4 +25,5 @@ export const useCodeEditor = create((set, get) => ({
     },
     setSelectedMessage: (selectedMessage) => set({ selectedMessage }),
     setShowCodeInterface: (showCodeInterface) => set({ showCodeInterface }),
+    setSelectedFile:(file)=>set({selectedFile:file})
 }));

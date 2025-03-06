@@ -186,7 +186,7 @@ const ChatPanel = () => {
                             {/* Coding Workspace */}
                             <div className="w-3/4 flex flex-col h-full bg-base-300">
                                 {/* Header */}
-                                <div className="flex items-center justify-between p-4 bg-base-400">
+                                <div className="flex items-center justify-between p-2 bg-base-200">
                                     <h2 className="text-lg font-semibold">Coding Workspace</h2>
                                     <button
                                         className="p-1 rounded-full bg-base-300 hover:bg-base-200 transition-colors"
@@ -201,13 +201,13 @@ const ChatPanel = () => {
                                 <div className="flex flex-1 h-full">
                                     {/* File Explorer */}
                                     <div className="w-1/3 bg-base-300 h-full p-4">
-                                        <h2 className="text-md font-semibold">File Explorer</h2>
+                                        {/* <h2 className="text-md font-semibold">File Explorer</h2> */}
                                         <FileExplorer />
                                     </div>
 
                                     {/* Code Editor */}
                                     <div className="w-2/3 bg-base-200 h-full p-4">
-                                        <h2 className="text-md font-semibold">Code Editor</h2>
+                                        {/* <h2 className="text-md font-semibold">Code Editor</h2> */}
                                         <CodeEditor />
                                     </div>
                                 </div>
