@@ -57,7 +57,7 @@ const ChatPanel = () => {
         if (selectedChat && selectedChat.senderId && selectedChat.senderId.email === AI) {
             // console.log("selectedChat", selectedChat);
             const parsedMessage = jsonFormatter(selectedChat.text);
-            // console.log("parsed", parsedMessage);
+            console.log("parsed", parsedMessage);
             setSelectedMessage(parsedMessage);
             setShowCodeInterface(true);
         } else {

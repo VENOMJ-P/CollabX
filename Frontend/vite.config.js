@@ -11,12 +11,12 @@ export default defineConfig({
       "Cross-Origin-Embedder-Policy": "credentialless", // Use "credentialless" instead of "require-corp"
     },
     cors: {
-      origin: ["http://localhost:5173", "http://localhost:3000", "https://res.cloudinary.com"],
+      origin: ["http://localhost:5173", "http://localhost:8000", "https://res.cloudinary.com"],
       credentials: true,
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },

@@ -154,12 +154,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useCodeEditor } from '../store/useCodeEditor';
 import { Editor } from '@monaco-editor/react';
 import toast from 'react-hot-toast';
+import { useChatStore } from '../store/useChatStore';
 
 const CodeEditor = () => {
-    const { openedFiles, webContainer, initWebContainer, closeFile } = useCodeEditor();
+    const { openedFiles, webContainer, initWebContainer, selectedMessage, closeFile, solve, isSolving } = useCodeEditor();
     const [activeFile, setActiveFile] = useState(null);
     const editorRef = useRef(null);
     const [editorTheme, setEditorTheme] = useState('vs-dark');
+    const [runProcess, setRunProcess] = useState(null)
+
+    const { getMessages, messages, isMessageLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
 
     useEffect(() => {
         if (openedFiles.length > 0) {
@@ -182,36 +186,69 @@ const CodeEditor = () => {
         }
     };
 
+
+
     const runCode = async () => {
         if (!webContainer) {
             toast.error('WebContainer is not initialized');
             return;
         }
-
-        if (!activeFile || !activeFile.filename.endsWith('.js')) {
-            toast.error('Only JavaScript files can be executed');
-            return;
-        }
-
         try {
             const fileSystem = {};
             openedFiles.forEach(file => {
                 fileSystem[file.filename] = { file: { contents: file.contents } };
             });
 
-            await webContainer.mount(fileSystem);
 
-            const process = await webContainer.spawn('node', [activeFile.filename]);
-            process.output.pipeTo(new WritableStream({
-                write(chunk) {
-                    console.log(chunk);
-                }
-            }));
+
+            await webContainer.mount(fileSystem);
+            if (runProcess) {
+                runProcess.kill()
+            }
+
+
+
+            if (!activeFile || !activeFile.filename.endsWith('.js')) {
+                toast.error('Only JavaScript files can be executed');
+                return;
+            }
+
+
+            console.log("build", selectedMessage, selectedMessage.buildCommand.mainItem)
+            if (selectedMessage.buildCommand) {
+                const installProcess = await webContainer.spawn(selectedMessage.buildCommand.mainItem, selectedMessage.buildCommand.commands);
+                installProcess.output.pipeTo(new WritableStream({
+                    write(chunk) {
+                        console.log(chunk);
+                    }
+                }));
+
+                setRunProcess(installProcess)
+            }
+
+            console.log("start", selectedMessage, selectedMessage.startCommand)
+            if (selectedMessage.startCommand) {
+
+                const process = await webContainer.spawn(selectedMessage.startCommand.mainItem, selectedMessage.startCommand.commands);
+                process.output.pipeTo(new WritableStream({
+                    write(chunk) {
+                        console.log(chunk);
+                    }
+                }));
+            } else {
+                const process = await webContainer.spawn('node', [activeFile.filename]);
+                process.output.pipeTo(new WritableStream({
+                    write(chunk) {
+                        console.log(chunk);
+                    }
+                }));
+            }
         } catch (error) {
             toast.error('Error running the code');
             console.error('Execution error:', error);
         }
     };
+
 
     return (
         <div className="code-editor-container flex flex-col h-full w-full bg-base-200 p-4 rounded-xl shadow-lg">

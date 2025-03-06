@@ -5,7 +5,7 @@ import { axiosInstance } from "../lib/axios.js";
 import { useProjectStore } from "./useProjectStore.js";
 import { useChatStore } from "./useChatStore.js";
 
-const BASE_URL="http://localhost:3000/"
+const BASE_URL="http://localhost:8000/"
 
 export const useAuthStore = create((set,get) => ({
   authUser: null,
