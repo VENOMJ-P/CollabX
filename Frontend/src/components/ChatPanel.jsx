@@ -19,10 +19,11 @@ import FileExplorer from './FileExplorer';
 function jsonFormatter(message) {
     try {
         const jsonObject = JSON.parse(message);
-        console.log("JSON Message", message, jsonObject);
+        // console.log("JSON Message", message, jsonObject);
         return jsonObject;
     } catch (error) {
         console.error("Error parsing JSON:", error);
+        console.log("Original message:", message);
         return null;
     }
 }
@@ -32,7 +33,7 @@ const ChatPanel = () => {
     const { selectedProject } = useProjectStore();
     const { authUser } = useAuthStore();
     const { isShowUserPanel } = useUserPanelStore();
-    const { selectedChat, setSelectedChat, setShowCodeInterface, showCodeInterface, setSelectedMessage } = useCodeEditor();
+    const { selectedChat, setSelectedChat, setShowCodeInterface, showCodeInterface, setSelectedMessage, removeFiles } = useCodeEditor();
     const AI = "ai@gmail.com";
 
     const messageEndRef = useRef(null);
@@ -54,9 +55,9 @@ const ChatPanel = () => {
     useEffect(() => {
         // Check if a chat is selected and it's from the AI
         if (selectedChat && selectedChat.senderId && selectedChat.senderId.email === AI) {
-            console.log("selectedChat", selectedChat);
+            // console.log("selectedChat", selectedChat);
             const parsedMessage = jsonFormatter(selectedChat.text);
-            console.log("parsed", parsedMessage);
+            // console.log("parsed", parsedMessage);
             setSelectedMessage(parsedMessage);
             setShowCodeInterface(true);
         } else {
@@ -110,14 +111,28 @@ const ChatPanel = () => {
     }
 
     const handleMessageClick = (message) => {
+        if (message.senderId.email !== AI) return;
         if (selectedChat && selectedChat._id === message._id) {
             // If clicking the same message that's already selected, toggle code interface
+
             setShowCodeInterface(!showCodeInterface);
         } else {
             // If clicking a different message, select it (which will open code interface via useEffect if AI message)
+
+
+            setSelectedChat(null);
+            setSelectedMessage(null);
+            removeFiles();
             setSelectedChat(message);
         }
     };
+
+    const handleCodeEditor = () => {
+        setSelectedChat(null);
+        setSelectedMessage(null);
+        removeFiles();
+        setShowCodeInterface(!showCodeInterface);
+    }
 
     return (
         <div className={`flex-1 flex flex-col overflow-hidden ${showCodeInterface ? "bg-base-100" : ""}`}>
@@ -127,10 +142,10 @@ const ChatPanel = () => {
             ) : (
                 <>
                     {showCodeInterface ? (
-                        <div className="flex flex-row h-full">
+                        <div className="flex flex-row h-full ">
                             {/* Chat Panel */}
-                            <div className="w-1/4 bg-base-200 h-full flex flex-col">
-                                <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                            <div className="w-1/4 bg-base-200 h-full flex flex-col  border-r border-base-300 ">
+                                <div className="flex-1 p-4 overflow-y-auto space-y-4 no-scrollbar">
                                     {messages.map((message) => (
                                         <div
                                             key={message._id}
@@ -186,11 +201,11 @@ const ChatPanel = () => {
                             {/* Coding Workspace */}
                             <div className="w-3/4 flex flex-col h-full bg-base-300">
                                 {/* Header */}
-                                <div className="flex items-center justify-between p-2 bg-base-200">
+                                <div className="flex items-center justify-between p-2  border-b border-base-300 bg-base-100 ">
                                     <h2 className="text-lg font-semibold">Coding Workspace</h2>
                                     <button
                                         className="p-1 rounded-full bg-base-300 hover:bg-base-200 transition-colors"
-                                        onClick={() => setShowCodeInterface()}
+                                        onClick={() => handleCodeEditor()}
                                         aria-label="Close"
                                     >
                                         <X size={18} />
@@ -200,13 +215,13 @@ const ChatPanel = () => {
                                 {/* Content */}
                                 <div className="flex flex-1 h-full">
                                     {/* File Explorer */}
-                                    <div className="w-1/3 bg-base-300 h-full p-4">
+                                    <div className="w-1/3 bg-base-300 h-full p-4 no-scrollbar border-r border-base-300">
                                         {/* <h2 className="text-md font-semibold">File Explorer</h2> */}
                                         <FileExplorer />
                                     </div>
 
                                     {/* Code Editor */}
-                                    <div className="w-2/3 bg-base-200 h-full p-4">
+                                    <div className="w-2/3 bg-base-200 h-full p-4 no-scrollbar border-l border-base-300">
                                         {/* <h2 className="text-md font-semibold">Code Editor</h2> */}
                                         <CodeEditor />
                                     </div>
@@ -220,7 +235,7 @@ const ChatPanel = () => {
                                 {messages.map((message) => (
                                     <div
                                         key={message._id}
-                                        onClick={() => setSelectedChat(message)}
+                                        onClick={() => handleMessageClick(message)}
                                         className={`chat ${message.senderId._id === authUser.data._id ? "chat-end" : "chat-start"}`}
                                     >
                                         <div className="chat-image avatar">

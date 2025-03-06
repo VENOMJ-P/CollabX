@@ -107,14 +107,15 @@ import React, { useState } from 'react';
 import { useCodeEditor } from '../store/useCodeEditor';
 
 const FileExplorer = () => {
-    const { selectedMessage, setSelectedFile } = useCodeEditor();
+    const { selectedMessage, addFile } = useCodeEditor();
     const [hoveredFile, setHoveredFile] = useState(null);
 
     // Function to handle file selection
     const handleFileSelect = (fileKey) => {
-        const fileContent = selectedMessage.fileTree[fileKey].file.contents; // Access file content from fileTree
-        setSelectedFile({ filename: fileKey, content: fileContent });
+        const fileContent = selectedMessage.fileTree[fileKey].file.contents;
+        addFile({ filename: fileKey, contents: fileContent }); // Add selected file
     };
+
 
     // Function to get appropriate file icon based on extension
     const getFileIcon = (filename) => {

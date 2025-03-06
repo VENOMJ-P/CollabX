@@ -5,12 +5,14 @@ import { useProjectStore } from "../store/useProjectStore";
 import { useUserPanelStore } from '../store/useUserPanelStore';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useCodeEditor } from '../store/useCodeEditor';
 
 const Sidebar = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { projects, fetchProjects, selectedProject, setSelectedProject } = useProjectStore();
     const { connectSocket, disconnectSocket } = useAuthStore();
     const { closeUserPanel } = useUserPanelStore();
+    const { selectedChat, setSelectedChat, setShowCodeInterface, showCodeInterface, setSelectedMessage, removeFiles } = useCodeEditor();
     useEffect(() => {
         fetchProjects(); // Fetch projects on mount
     }, []);
@@ -25,6 +27,10 @@ const Sidebar = () => {
                         onClick={() => {
                             if (selectedProject?._id !== project?._id) {
                                 disconnectSocket();  // Disconnect from previous project
+                                setSelectedChat(null);
+                                setSelectedMessage(null);
+                                removeFiles();
+                                setShowCodeInterface(false);
                                 setSelectedProject(project);
                                 closeUserPanel();
                                 connectSocket(); // Connect to the new project
