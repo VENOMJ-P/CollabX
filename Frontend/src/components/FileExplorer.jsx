@@ -112,7 +112,7 @@ const FileExplorer = () => {
 
     // Function to handle file selection
     const handleFileSelect = (fileKey) => {
-        const fileContent = selectedMessage.fileTree[fileKey].file.contents;
+        const fileContent = selectedMessage.fileTree[fileKey].file?.contents;
         addFile({ filename: fileKey, contents: fileContent }); // Add selected file
     };
 
@@ -120,27 +120,34 @@ const FileExplorer = () => {
     // Function to get appropriate file icon based on extension
     const getFileIcon = (filename) => {
         const extension = filename.split('.').pop().toLowerCase();
-
         switch (extension) {
             case 'js':
             case 'jsx':
-                return '📄 '; // JavaScript files
-            case 'css':
-                return '🎨 '; // CSS files
-            case 'html':
-                return '🌐 '; // HTML files
+                return '📜';
+            case 'ts':
+            case 'tsx':
+                return '🔷';
             case 'json':
                 return '📋 '; // JSON files
+            case 'html':
+                return '🌐';
+            case 'css':
+                return '🎨';
             case 'md':
-                return '📝 '; // Markdown files
+                return '📘';
             case 'png':
             case 'jpg':
             case 'jpeg':
-            case 'svg':
-                return '🖼️ '; // Image files
+            case 'webp':
+                return '🖼️';
+            case 'pdf':
+                return '📄';
+            case 'txt':
+                return '📄';
             default:
-                return '📄 '; // Default file icon
+                return '📄';
         }
+
     };
 
     return (
@@ -202,4 +209,3 @@ const FileExplorer = () => {
 };
 
 export default FileExplorer;
-

@@ -49,58 +49,25 @@ export const sendMessage = async (req, res) => {
     const senderId = req.user.id;
 
     if (!text && !image) {
-      return errorResponse(res, 400, "Message cannot be empty");
+      return errorResponse(res, 400, 'Message cannot be empty');
     }
 
     let imageUrl = null;
+
+    // Upload image to Cloudinary if present
     if (image) {
       try {
-        const uploadResponse = await cloudinary.uploader.upload(image, {
-          folder: "chat_images",
+        const uploadResult = await cloudinary.uploader.upload(image, {
+          folder: 'chat_images',
         });
-        imageUrl = uploadResponse.secure_url;
-      } catch (uploadError) {
-        console.error("Cloudinary Upload Error:", uploadError);
-        return errorResponse(res, 500, "Failed to upload image");
+        imageUrl = uploadResult.secure_url;
+      } catch (err) {
+        console.error('Cloudinary upload failed:', err);
+        return errorResponse(res, 500, 'Image upload failed');
       }
     }
 
-    // Check if the message starts with "@ai"
-    if (text && text.startsWith("@ai")) {
-      const aiPrompt = text.replace("@ai", "").trim(); // Remove "@ai" from the input
-
-      // Generate AI response using Gemini
-      const aiResponse = await generateResult({
-        prompt: aiPrompt,
-        image: image,
-      });
-
-      // Add AI-generated content to the message
-      const newAIResponse = new Message({
-        senderId: AI_ID, // Sender is the user making the request
-        projectId,
-        text: aiResponse,
-        image: null, // AI response will likely not include images unless explicitly generated
-      });
-
-      await newAIResponse.save();
-
-      console.log(aiResponse);
-      const populatedMessage = await Message.findById(
-        newAIResponse._id
-      ).populate("senderId", "fullName profilePic email");
-
-      io.to(projectId).emit("newMessage", populatedMessage);
-
-      return successResponse(
-        res,
-        201,
-        "AI response generated and sent successfully",
-        newAIResponse
-      );
-    }
-
-    // Normal message flow
+    // Create and save user message
     const newMessage = new Message({
       senderId,
       projectId,
@@ -110,22 +77,53 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // Populate sender info
+    // Populate sender details
     const populatedMessage = await Message.findById(newMessage._id).populate(
-      "senderId",
-      "fullName profilePic email"
+      'senderId',
+      'fullName profilePic email'
     );
 
-    io.to(projectId).emit("newMessage", populatedMessage);
+    // Emit the message to all users in the project room
+    io.to(projectId).emit('newMessage', populatedMessage);
 
-    return successResponse(
-      res,
-      201,
-      "Message sent successfully",
-      populatedMessage
-    );
-  } catch (error) {
-    console.error("Error sending message:", error);
-    return errorResponse(res, 500, "Something went wrong", error);
+    // Check if message is an AI prompt
+    if (text && text.startsWith('@ai')) {
+      const prompt = text.replace('@ai', '').trim();
+
+      try {
+        const aiResponse = await generateResult({
+          prompt,
+          image,
+        });
+
+        if (!aiResponse) {
+          return errorResponse(res, 500, 'AI failed to generate a response');
+        }
+
+        const aiMessage = new Message({
+          senderId: AI_ID,
+          projectId,
+          text: aiResponse,
+          image: null,
+        });
+
+        await aiMessage.save();
+
+        const populatedAIMessage = await Message.findById(aiMessage._id).populate(
+          'senderId',
+          'fullName profilePic email'
+        );
+
+        io.to(projectId).emit('newMessage', populatedAIMessage);
+      } catch (aiErr) {
+        console.error('AI generation error:', aiErr);
+        return errorResponse(res, 500, 'Failed to process AI message');
+      }
+    }
+
+    return successResponse(res, 201, 'Message sent successfully', populatedAIMessage);
+  } catch (err) {
+    console.error('Error in sendMessage:', err);
+    return errorResponse(res, 500, 'Internal server error', err);
   }
 };

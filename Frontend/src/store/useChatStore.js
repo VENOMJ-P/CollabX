@@ -26,6 +26,7 @@ export const useChatStore = create((set, get) => ({
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/messages/${projectId}`);
+
       set({ messages: res.data.data });
     } catch (error) {
       toast.error(error.response.data.message);
@@ -61,6 +62,12 @@ export const useChatStore = create((set, get) => ({
     const handleMessage = (message) => {
       console.log("New message received: ", message);
       set((state) => ({ messages: [...state.messages, message] }));
+
+      // set((state) => {
+      //   if (state.messages.some(m => m.id === message.id)) return state;
+      //   return { messages: [...state.messages, message] };
+      // });
+      
     };
 
     socket.emit("joinProject", selectedProject._id);

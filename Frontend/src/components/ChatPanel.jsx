@@ -54,21 +54,21 @@ const ChatPanel = () => {
   useEffect(() => {
     if (selectedProject?._id) {
       getMessages(selectedProject._id);
-      subscribeToMessages(selectedProject._id);
-      return () => unsubscribeFromMessages();
+      const unsubscribe = subscribeToMessages(selectedProject._id);
+      return () => unsubscribe?.();
     }
   }, [
     selectedProject?._id,
     getMessages,
     subscribeToMessages,
-    unsubscribeFromMessages,
+    unsubscribeFromMessages
   ]);
 
   useEffect(() => {
-    if (messageEndRef.current && messages.length > 0) {
+    if (messageEndRef.current && messages) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isShowUserPanel]);
+  }, [messages, showCodeInterface]);
 
   useEffect(() => {
     // Check if a chat is selected and it's from the AI
@@ -164,9 +164,8 @@ const ChatPanel = () => {
 
   return (
     <div
-      className={`flex-1 flex flex-col overflow-hidden ${
-        showCodeInterface ? "bg-base-100" : ""
-      }`}
+      className={`flex-1 flex flex-col overflow-hidden ${showCodeInterface ? "bg-base-100" : ""
+        }`}
     >
       <ChatHeader />
       {isShowUserPanel ? (
@@ -181,12 +180,12 @@ const ChatPanel = () => {
                   {messages.map((message) => (
                     <div
                       key={message._id}
+                      ref={messageEndRef}
                       onClick={() => handleMessageClick(message)}
-                      className={`chat ${
-                        message.senderId._id === authUser.data._id
-                          ? "chat-end"
-                          : "chat-start"
-                      }`}
+                      className={`chat ${message.senderId._id === authUser.data._id
+                        ? "chat-end"
+                        : "chat-start"
+                        }`}
                     >
                       <div className="chat-image avatar">
                         <div className="size-12 rounded-full border">
@@ -209,8 +208,7 @@ const ChatPanel = () => {
                       <div className="chat-bubble flex flex-col">
                         {message.text && (
                           <div
-                            className={`break-words max-w-full text-left 
-                                                        overflow-y-auto no-scrollbar`}
+                            className={`break-words max-w-full text-left overflow-y-auto no-scrollbar`}
                           >
                             {message.senderId.email === AI ? (
                               <WriteAiMessage text={message.text} />
@@ -220,10 +218,10 @@ const ChatPanel = () => {
                           </div>
                         )}
                       </div>
-                      {/* Scroll reference added to the last message */}
+                      {/* Scroll reference added to the last message
                       {messages[messages.length - 1]?._id === message._id && (
                         <div ref={messageEndRef} />
-                      )}
+                      )} */}
                     </div>
                   ))}
                 </div>
@@ -271,12 +269,12 @@ const ChatPanel = () => {
                 {messages.map((message) => (
                   <div
                     key={message._id}
+                    ref={messageEndRef}
                     onClick={() => handleMessageClick(message)}
-                    className={`chat ${
-                      message.senderId._id === authUser.data._id
-                        ? "chat-end"
-                        : "chat-start"
-                    }`}
+                    className={`chat ${message.senderId._id === authUser.data._id
+                      ? "chat-end"
+                      : "chat-start"
+                      }`}
                   >
                     <div className="chat-image avatar">
                       <div className="size-12 rounded-full border">
@@ -310,9 +308,9 @@ const ChatPanel = () => {
                       )}
                     </div>
                     {/* Scroll reference added to the last message */}
-                    {messages[messages.length - 1]?._id === message._id && (
+                    {/* {messages[messages.length - 1]?._id === message._id && (
                       <div ref={messageEndRef} />
-                    )}
+                    )} */}
                   </div>
                 ))}
               </div>

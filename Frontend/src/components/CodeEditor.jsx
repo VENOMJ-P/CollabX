@@ -150,7 +150,7 @@
 
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, act } from 'react';
 import { useCodeEditor } from '../store/useCodeEditor';
 import { Editor } from '@monaco-editor/react';
 import toast from 'react-hot-toast';
@@ -166,10 +166,8 @@ const CodeEditor = () => {
     const { getMessages, messages, isMessageLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
 
     useEffect(() => {
-        if (openedFiles.length > 0) {
-            setActiveFile(openedFiles[openedFiles.length - 1]);
-        }
-    }, [openedFiles]);
+        setActiveFile(openedFiles.length > 0 ? openedFiles[openedFiles.length - 1] : null);
+    }, [openedFiles, activeFile]);
 
     const handleEditorDidMount = (editor) => {
         editorRef.current = editor;
@@ -182,7 +180,7 @@ const CodeEditor = () => {
     const handleFileClose = (filename) => {
         closeFile(filename);
         if (activeFile && activeFile.filename === filename) {
-            setActiveFile(openedFiles.length > 1 ? openedFiles[openedFiles.length - 2] : null);
+            setActiveFile(openedFiles.length >= 1 ? openedFiles[openedFiles.length - 1] : null);
         }
     };
 
@@ -308,70 +306,3 @@ const CodeEditor = () => {
 
 export default CodeEditor;
 
-
-
-// import React from "react";
-// import { useCodeEditor } from "../store/useCodeEditor";
-// import Markdown from "markdown-to-jsx";
-// import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-// import { materialOceanic } from "react-syntax-highlighter/dist/esm/styles/prism";
-
-// const CodeEditor = () => {
-//     const { openedFiles } = useCodeEditor();
-//     const activeFile = openedFiles.length ? openedFiles[openedFiles.length - 1] : null; // Get the last opened file
-
-//     // Function to get file language for syntax highlighting
-//     const getFileLanguage = (filename) => {
-//         const extension = filename.split(".").pop().toLowerCase();
-//         const languageMap = {
-//             js: "javascript",
-//             jsx: "javascript",
-//             ts: "typescript",
-//             tsx: "typescript",
-//             css: "css",
-//             html: "html",
-//             json: "json",
-//             md: "markdown",
-//             py: "python",
-//             java: "java",
-//             cpp: "cpp",
-//             c: "c",
-//             cs: "csharp",
-//             php: "php",
-//             rb: "ruby",
-//             swift: "swift",
-//             go: "go",
-//         };
-//         return languageMap[extension] || "plaintext";
-//     };
-
-//     return (
-//         <div className="code-editor-container flex flex-col h-full w-full bg-base-200 p-4 rounded-xl shadow-lg">
-//             <div className="editor-header flex items-center justify-between mb-3 border-b border-base-300 pb-2">
-//                 <h2 className="text-lg font-semibold text-primary">Code Editor</h2>
-//             </div>
-
-//             <div className="editor-wrapper flex-1 bg-base-100 rounded-lg overflow-hidden shadow-md p-4">
-//                 {activeFile ? (
-//                     activeFile.filename.endsWith(".md") ? (
-//                         <Markdown>{activeFile.content}</Markdown>
-//                     ) : (
-//                         <SyntaxHighlighter
-//                             language={getFileLanguage(activeFile.filename)}
-//                             style={materialOceanic}
-//                             showLineNumbers
-//                         >
-//                             {activeFile.content}
-//                         </SyntaxHighlighter>
-//                     )
-//                 ) : (
-//                     <div className="flex items-center justify-center h-full text-gray-500">
-//                         <p>No file selected</p>
-//                     </div>
-//                 )}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default CodeEditor;
