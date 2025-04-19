@@ -44,5 +44,31 @@ export const useCodeEditor = create((set, get) => ({
         })),
     removeFiles:()=>{
         set({openedFiles:[]})
+    },
+
+    updateFileContent: (filename, newContent) => {
+        const { openedFiles, selectedMessage } = get();
+        
+        // Update in openedFiles
+        set((state) => ({
+            openedFiles: openedFiles.map((file) => 
+                file.filename === filename ? { ...file, contents: newContent } : file
+            ),
+            // Also update in the original fileTree if it exists
+            selectedMessage: selectedMessage && selectedMessage.fileTree && selectedMessage.fileTree[filename] ? 
+                {
+                    ...selectedMessage,
+                    fileTree: {
+                        ...selectedMessage.fileTree,
+                        [filename]: {
+                            ...selectedMessage.fileTree[filename],
+                            file: {
+                                ...selectedMessage.fileTree[filename].file,
+                                contents: newContent
+                            }
+                        }
+                    }
+                } : selectedMessage
+        }));
     }
 }));
