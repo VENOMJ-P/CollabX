@@ -206,6 +206,13 @@ const ChatPanel = () => {
                         )}
                       </div>
                       <div className="chat-bubble flex flex-col">
+                        {message.image && (
+                            <img
+                                src={message.image}
+                                alt="Attachment"
+                                className="sm:max-w-[200px] rounded-md mb-2"
+                            />
+                        )}
                         {message.text && (
                           <div
                             className={`break-words max-w-full text-left overflow-y-auto no-scrollbar`}
@@ -225,6 +232,8 @@ const ChatPanel = () => {
                     </div>
                   ))}
                 </div>
+
+                
 
                 {/* Message Input - Fixed at bottom */}
                 <div className="p-4 bg-base-200">
@@ -295,6 +304,13 @@ const ChatPanel = () => {
                       )}
                     </div>
                     <div className="chat-bubble flex flex-col">
+                       {message.image && (
+                            <img
+                                src={message.image}
+                                alt="Attachment"
+                                className="sm:max-w-[200px] rounded-md mb-2"
+                            />
+                        )}
                       {message.text && (
                         <div
                           className={`break-words max-w-full text-left overflow-y-auto no-scrollbar`}

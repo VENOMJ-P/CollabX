@@ -49,7 +49,7 @@ export const sendMessage = async (req, res) => {
     const senderId = req.user.id;
 
     if (!text && !image) {
-      return errorResponse(res, 400, 'Message cannot be empty');
+      return errorResponse(res, 400, "Message cannot be empty");
     }
 
     let imageUrl = null;
@@ -58,12 +58,14 @@ export const sendMessage = async (req, res) => {
     if (image) {
       try {
         const uploadResult = await cloudinary.uploader.upload(image, {
-          folder: 'chat_images',
+          folder: "chat_images",
         });
+
+        console.log("image:", uploadResult);
         imageUrl = uploadResult.secure_url;
       } catch (err) {
-        console.error('Cloudinary upload failed:', err);
-        return errorResponse(res, 500, 'Image upload failed');
+        console.error("Cloudinary upload failed:", err);
+        return errorResponse(res, 500, "Image upload failed");
       }
     }
 
@@ -78,17 +80,17 @@ export const sendMessage = async (req, res) => {
     await newMessage.save();
 
     // Populate sender details
-    const populatedMessage = await Message.findById(newMessage._id).populate(
-      'senderId',
-      'fullName profilePic email'
+    const userMessage = await Message.findById(newMessage._id).populate(
+      "senderId",
+      "fullName profilePic email"
     );
 
     // Emit the message to all users in the project room
-    io.to(projectId).emit('newMessage', populatedMessage);
+    io.to(projectId).emit("newMessage", userMessage);
 
     // Check if message is an AI prompt
-    if (text && text.startsWith('@ai')) {
-      const prompt = text.replace('@ai', '').trim();
+    if (text && text.startsWith("@ai")) {
+      const prompt = text.replace("@ai", "").trim();
 
       try {
         const aiResponse = await generateResult({
@@ -97,7 +99,7 @@ export const sendMessage = async (req, res) => {
         });
 
         if (!aiResponse) {
-          return errorResponse(res, 500, 'AI failed to generate a response');
+          return errorResponse(res, 500, "AI failed to generate a response");
         }
 
         const aiMessage = new Message({
@@ -109,21 +111,20 @@ export const sendMessage = async (req, res) => {
 
         await aiMessage.save();
 
-        const populatedAIMessage = await Message.findById(aiMessage._id).populate(
-          'senderId',
-          'fullName profilePic email'
-        );
+        const populatedAIMessage = await Message.findById(
+          aiMessage._id
+        ).populate("senderId", "fullName profilePic email");
 
-        io.to(projectId).emit('newMessage', populatedAIMessage);
+        io.to(projectId).emit("newMessage", populatedAIMessage);
       } catch (aiErr) {
-        console.error('AI generation error:', aiErr);
-        return errorResponse(res, 500, 'Failed to process AI message');
+        console.error("AI generation error:", aiErr);
+        return errorResponse(res, 500, "Failed to process AI message");
       }
     }
 
-    return successResponse(res, 201, 'Message sent successfully', populatedAIMessage);
+    return successResponse(res, 201, "Message sent successfully", userMessage);
   } catch (err) {
-    console.error('Error in sendMessage:', err);
-    return errorResponse(res, 500, 'Internal server error', err);
+    console.error("Error in sendMessage:", err);
+    return errorResponse(res, 500, "Internal server error", err);
   }
 };
