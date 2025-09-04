@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GOOGLE_AI_KEY } from "../configs/server.config.js";
-import { SYSTEM_INSTRUCTION } from "../configs/ai.prompt.js";
+import { SYSTEM_INSTRUCTION } from "../configs/server.config.js";
 
 const genAI = new GoogleGenerativeAI(GOOGLE_AI_KEY);
 const model = genAI.getGenerativeModel({
@@ -8,7 +8,7 @@ const model = genAI.getGenerativeModel({
   generationConfig: {
     responseMimeType: "application/json",
     temperature: 0.4,
-},
+  },
   systemInstruction: SYSTEM_INSTRUCTION,
 });
 
@@ -39,9 +39,9 @@ export const generateResult = async ({ prompt, image }) => {
 
     // Send text + optional image to AI model
     const inputPayload = image_prompt ? [prompt, image_prompt] : [prompt];
-    console.log("input",inputPayload,prompt)
+    console.log("input", inputPayload, prompt);
     const result = await model.generateContent(inputPayload);
-    console.log("result",result)
+    console.log("result", result);
 
     // Extract AI-generated response
     const generatedResponse = result?.response?.text();
