@@ -2,12 +2,13 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import Project from "../models/project.model.js";
+import { CLIENT_URL } from "./server.config.js";
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://cloudinary.com"],
+    origin: ["http://localhost:5173", "https://cloudinary.com", CLIENT_URL],
     credentials: true,
   },
 });
@@ -39,7 +40,6 @@ io.use(async (socket, next) => {
   }
 });
 
-
 io.on("connection", (socket) => {
   console.log(`User ${socket.userId} connected to project ${socket.projectId}`);
 
@@ -58,14 +58,13 @@ io.on("connection", (socket) => {
     Array.from(projectUsersMap[socket.projectId])
   );
 
-  
   // Handle user disconnection
   socket.on("disconnect", () => {
     console.log(`User ${socket.userId} disconnected`);
 
     if (projectUsersMap[socket.projectId]) {
       projectUsersMap[socket.projectId].delete(socket.userId);
-      
+
       // Emit before potentially deleting the Set
       io.to(socket.projectId).emit(
         "getOnlineUsers",

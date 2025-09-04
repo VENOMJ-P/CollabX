@@ -4,7 +4,7 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 
 import appRoutes from "./routes/index.routes.js";
-import { PORT } from "./configs/server.config.js";
+import { CLIENT_URL, PORT } from "./configs/server.config.js";
 import { connectDB } from "./configs/database.config.js";
 import { app, server } from "./configs/socket.config.js";
 
@@ -25,7 +25,7 @@ app.use(limiter);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://cloudinary.com", CLIENT_URL],
     credentials: true,
   })
 );
