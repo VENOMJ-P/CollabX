@@ -17,21 +17,29 @@ export default defineConfig(({ mode }) => {
       },
       cors: {
         origin: [
-          "http://localhost:5173",
-          "http://localhost:8000",
-          "http://localhost:3000",
+          "http://localhost:5173", // frontend dev
+          "http://localhost:8000", // backend dev
+          "http://localhost:3000", // alternative dev
+          BASE_URL, // your hosted backend URL from .env
           "https://res.cloudinary.com",
-          BASE_URL,
         ],
         credentials: true,
       },
-      proxy: {
-        "/api": {
-          target: "http://localhost:8000",
-          changeOrigin: true,
-          secure: false,
-        },
-      },
+      // only proxy in development
+      proxy:
+        mode === "development"
+          ? {
+              "/api": {
+                target: BASE_URL,
+                changeOrigin: true,
+                secure: false,
+              },
+            }
+          : undefined,
+    },
+    // for production deployment
+    build: {
+      outDir: "dist",
     },
   };
 });

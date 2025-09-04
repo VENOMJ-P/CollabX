@@ -5,6 +5,7 @@ import { axiosInstance } from "../lib/axios.js";
 import { useProjectStore } from "./useProjectStore.js";
 import { useChatStore } from "./useChatStore.js";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+console.log(BASE_URL);
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
