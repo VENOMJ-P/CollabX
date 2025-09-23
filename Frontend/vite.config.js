@@ -18,8 +18,6 @@ export default defineConfig(({ mode }) => {
       cors: {
         origin: [
           "http://localhost:5173", // frontend dev
-          "http://localhost:8000", // backend dev
-          "http://localhost:3000", // alternative dev
           BASE_URL, // your hosted backend URL from .env
           "https://res.cloudinary.com",
         ],

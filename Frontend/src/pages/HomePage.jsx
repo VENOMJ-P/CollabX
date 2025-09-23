@@ -51,12 +51,12 @@ import { useAuthStore } from '../store/useAuthStore';
 
 const HomePage = () => {
   const { selectedProject } = useProjectStore(); // Assuming `isAuthorized` indicates successful authorization
-  const { initWebContainer } = useCodeEditor();
+  // const { initWebContainer } = useCodeEditor();
 
 
-  useEffect(() => {
-    initWebContainer();
-  }, [initWebContainer]);
+  // useEffect(() => {
+  //   initWebContainer();
+  // }, [initWebContainer]);
   return (
     <div className="h-screen bg-base-100">
       <div className="flex items-center justify-center pt-20 px-4">

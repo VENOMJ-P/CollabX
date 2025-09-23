@@ -1,24 +1,36 @@
-
-
-import React, { useState, useEffect, useRef, act } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCodeEditor } from '../store/useCodeEditor';
 import { Editor } from '@monaco-editor/react';
 import toast from 'react-hot-toast';
-import { useChatStore } from '../store/useChatStore';
+import { Play, Square, Loader2 } from 'lucide-react';
 
 const CodeEditor = () => {
-    const { openedFiles, webContainer, initWebContainer, selectedMessage, closeFile, solve, isSolving, updateFileContent } = useCodeEditor();
+    const { 
+        openedFiles, 
+        selectedMessage, 
+        closeFile, 
+        updateFileContent,
+        executeCode,
+        isExecuting,
+        executionOutput,
+        clearExecutionOutput,
+        dockerAvailable,
+        checkDockerAvailability
+    } = useCodeEditor();
+    
     const [activeFile, setActiveFile] = useState(null);
     const editorRef = useRef(null);
     const [editorTheme, setEditorTheme] = useState('vs-dark');
-    const [runProcess, setRunProcess] = useState(null)
-
-    const { getMessages, messages, isMessageLoading, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
 
     useEffect(() => {
-        if (!activeFile)
+        if (!activeFile) {
             setActiveFile(openedFiles.length > 0 ? openedFiles[openedFiles.length - 1] : null);
+        }
     }, [activeFile, openedFiles]);
+
+    useEffect(() => {
+        checkDockerAvailability();
+    }, []);
 
     const handleEditorDidMount = (editor) => {
         editorRef.current = editor;
@@ -26,12 +38,11 @@ const CodeEditor = () => {
 
     const handleCodeChange = (value) => {
         if (activeFile) {
-            console.log("activeFile", activeFile.filename, value)
-            updateFileContent(activeFile.filename, value); // update global state
-            setActiveFile((prevFile) => ({ ...prevFile, contents: value })); // update local state
+            console.log("activeFile", activeFile.filename, value);
+            updateFileContent(activeFile.filename, value);
+            setActiveFile((prevFile) => ({ ...prevFile, contents: value }));
         }
     };
-
 
     const handleFileClose = (filename) => {
         closeFile(filename);
@@ -40,69 +51,38 @@ const CodeEditor = () => {
         }
     };
 
-
-
-    const runCode = async () => {
-        if (!webContainer) {
-            toast.error('WebContainer is not initialized');
+    const handleRunCode = async () => {
+        if (!dockerAvailable) {
+            toast.error('Docker is not available for code execution');
             return;
         }
-        try {
-            const fileSystem = {};
-            openedFiles.forEach(file => {
-                fileSystem[file.filename] = { file: { contents: file.contents } };
-            });
 
-
-
-            await webContainer.mount(fileSystem);
-            if (runProcess) {
-                runProcess.kill()
-            }
-
-
-
-            if (!activeFile || !activeFile.filename.endsWith('.js')) {
-                toast.error('Only JavaScript files can be executed');
-                return;
-            }
-
-
-            console.log("build", selectedMessage, selectedMessage.buildCommand.mainItem)
-            if (selectedMessage.buildCommand) {
-                const installProcess = await webContainer.spawn(selectedMessage.buildCommand.mainItem, selectedMessage.buildCommand.commands);
-                installProcess.output.pipeTo(new WritableStream({
-                    write(chunk) {
-                        console.log(chunk);
-                    }
-                }));
-
-                setRunProcess(installProcess)
-            }
-
-            console.log("start", selectedMessage, selectedMessage.startCommand)
-            if (selectedMessage.startCommand) {
-
-                const process = await webContainer.spawn(selectedMessage.startCommand.mainItem, selectedMessage.startCommand.commands);
-                process.output.pipeTo(new WritableStream({
-                    write(chunk) {
-                        console.log(chunk);
-                    }
-                }));
-            } else {
-                const process = await webContainer.spawn('node', [activeFile.filename]);
-                process.output.pipeTo(new WritableStream({
-                    write(chunk) {
-                        console.log(chunk);
-                    }
-                }));
-            }
-        } catch (error) {
-            toast.error('Error running the code');
-            console.error('Execution error:', error);
+        if (!openedFiles || openedFiles.length === 0) {
+            toast.error('No files to execute');
+            return;
         }
+
+        await executeCode();
     };
 
+    const getLanguageFromFilename = (filename) => {
+        const extension = filename.split('.').pop().toLowerCase();
+        const languageMap = {
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'ts': 'typescript',
+            'tsx': 'typescript',
+            'py': 'python',
+            'java': 'java',
+            'cpp': 'cpp',
+            'c': 'c',
+            'html': 'html',
+            'css': 'css',
+            'json': 'json',
+            'md': 'markdown'
+        };
+        return languageMap[extension] || 'plaintext';
+    };
 
     return (
         <div className="code-editor-container flex flex-col h-full w-full bg-base-200 p-4 rounded-xl shadow-lg">
@@ -111,19 +91,32 @@ const CodeEditor = () => {
                 {openedFiles.map((file) => (
                     <div
                         key={file.filename}
-                        className={`tab flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all duration-300 ${activeFile?.filename === file.filename ? 'bg-primary text-white' : 'bg-base-100 text-gray-600'
-                            } hover:bg-primary/20`}
+                        className={`tab flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                            activeFile?.filename === file.filename 
+                                ? 'bg-primary text-white' 
+                                : 'bg-base-100 text-gray-600'
+                        } hover:bg-primary/20`}
                         onClick={() => setActiveFile(file)}
                     >
                         <span className="truncate max-w-xs">{file.filename}</span>
-                        <button className="text-red-500 hover:text-red-700" onClick={() => handleFileClose(file.filename)}>✕</button>
+                        <button 
+                            className="text-red-500 hover:text-red-700" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleFileClose(file.filename);
+                            }}
+                        >
+                            ✕
+                        </button>
                     </div>
                 ))}
             </div>
 
             {/* Editor Controls */}
             <div className="editor-header flex items-center justify-between mb-3 border-b border-base-300 pb-2">
-                <h2 className="text-lg font-semibold text-primary">{activeFile?.filename || 'No file open'}</h2>
+                <h2 className="text-lg font-semibold text-primary">
+                    {activeFile?.filename || 'No file open'}
+                </h2>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => {
@@ -135,7 +128,30 @@ const CodeEditor = () => {
                     >
                         {editorTheme === 'vs-dark' ? '🌞' : '🌙'}
                     </button>
-                    {activeFile && <button onClick={runCode} className="btn btn-sm btn-primary">Run Code</button>}
+                    
+                    {dockerAvailable && (
+                        <button 
+                            onClick={handleRunCode}
+                            disabled={isExecuting || !activeFile}
+                            className="btn btn-sm btn-success flex items-center gap-2"
+                        >
+                            {isExecuting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Running...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-4 h-4" />
+                                    Run Code
+                                </>
+                            )}
+                        </button>
+                    )}
+                    
+                    {!dockerAvailable && (
+                        <div className="badge badge-error badge-sm">Docker Unavailable</div>
+                    )}
                 </div>
             </div>
 
@@ -144,11 +160,18 @@ const CodeEditor = () => {
                 {activeFile ? (
                     <Editor
                         height="100%"
-                        defaultLanguage={activeFile.filename.split('.').pop()}
+                        language={getLanguageFromFilename(activeFile.filename)}
                         value={activeFile.contents}
                         onChange={handleCodeChange}
                         onMount={handleEditorDidMount}
                         theme={editorTheme}
+                        options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            wordWrap: 'on',
+                            automaticLayout: true,
+                            scrollBeyondLastLine: false,
+                        }}
                     />
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-500">
@@ -156,9 +179,46 @@ const CodeEditor = () => {
                     </div>
                 )}
             </div>
+
+            {/* Execution Output */}
+            {executionOutput && (
+                <div className="execution-output mt-4 bg-base-300 rounded-lg p-4 max-h-48 overflow-y-auto">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-semibold">Output:</h3>
+                        <button
+                            onClick={clearExecutionOutput}
+                            className="btn btn-xs btn-ghost"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    
+                    {executionOutput.output && (
+                        <div className="mb-2">
+                            <h4 className="text-xs font-medium text-success mb-1">STDOUT:</h4>
+                            <pre className="text-xs bg-base-100 p-2 rounded whitespace-pre-wrap">
+                                {executionOutput.output.stdout || 'No output'}
+                            </pre>
+                        </div>
+                    )}
+                    
+                    {executionOutput.output && executionOutput.output.stderr && (
+                        <div className="mb-2">
+                            <h4 className="text-xs font-medium text-error mb-1">STDERR:</h4>
+                            <pre className="text-xs bg-base-100 p-2 rounded text-error whitespace-pre-wrap">
+                                {executionOutput.output.stderr}
+                            </pre>
+                        </div>
+                    )}
+                    
+                    <div className="text-xs text-base-content/70">
+                        Exit Code: {executionOutput.output?.exitCode ?? 'N/A'} | 
+                        Execution ID: {executionOutput.executionId}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default CodeEditor;
-
