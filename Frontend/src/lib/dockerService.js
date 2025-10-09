@@ -26,34 +26,46 @@ class DockerService {
     }
 
     try {
-      // Convert files object to the format expected by backend
+      // Convert files array to object format expected by backend
       const formattedFiles = {};
-      files.forEach((file) => {
-        formattedFiles[file.filename] = file.contents;
-      });
+
+      if (Array.isArray(files)) {
+        files.forEach((file) => {
+          formattedFiles[file.filename] = file.contents;
+        });
+      } else if (typeof files === "object") {
+        Object.assign(formattedFiles, files);
+      }
+
+      if (Object.keys(formattedFiles).length === 0) {
+        toast.error("No files to execute");
+        return null;
+      }
 
       console.log("Formatted Files:", formattedFiles);
-      console.log("Build Command:", buildCommand);
-      console.log("Start Command:", startCommand);
 
       const response = await axiosInstance.post("/execution/run", {
         files: formattedFiles,
-        buildCommand,
-        startCommand,
+        buildCommand: buildCommand || {},
+        startCommand: startCommand || { commands: [] },
       });
 
       return response.data.data;
     } catch (error) {
       console.error("Code execution failed:", error);
-      toast.error(error.response?.data?.message || "Code execution failed");
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "Code execution failed";
+      toast.error(errorMsg);
       return null;
     }
   }
 
   async runCodeFromMessage(openedFiles, selectedMessage) {
     if (!this.isDockerAvailable) {
-      await this.checkDockerStatus();
-      if (!this.isDockerAvailable) {
+      const available = await this.checkDockerStatus();
+      if (!available) {
         toast.error("Docker is not available on the server");
         return null;
       }
