@@ -26,21 +26,23 @@ export const useChatStore = create((set, get) => ({
     set({ isMessagesLoading: true });
     try {
       const res = await axiosInstance.get(`/messages/${projectId}`);
-
-      set({ messages: res.data.data });
+      set({ messages: res.data.data, isMessagesLoading: false });
     } catch (error) {
       toast.error(error.response.data.message);
-    } finally {
       set({ isMessagesLoading: false });
     }
   },
-  sendMessage: async(messageData,selectedProject)=>{
+
+  sendMessage: async (messageData, selectedProject) => {
     const { messages } = get();
     try {
       set({ isChatLoading: true });
-      const res = await axiosInstance.post(`/messages/send/${selectedProject}`,messageData);
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedProject}`,
+        messageData
+      );
       set({
-        messages:[...messages,res.data.data],
+        messages: [...messages, res.data.data],
         // chatData: res.data.data
       });
     } catch (error) {
@@ -49,57 +51,97 @@ export const useChatStore = create((set, get) => ({
       set({ isChatLoading: false });
     }
   },
-
   subscribeToMessages: (selectedProject) => {
-    if (!selectedProject) return;
-    
-    const socket = useAuthStore.getState().socket;
-    if (!socket) {
-      console.error("Socket is not connected");
+    if (!selectedProject) {
+      console.error("No project selected for subscription");
       return;
     }
 
-    const handleMessage = (message) => {
-      console.log("New message received: ", message);
-      set((state) => ({ messages: [...state.messages, message] }));
+    const socket = useAuthStore.getState().socket;
+    if (!socket) {
+      console.error("Socket is not initialized");
+      return;
+    }
 
-      // set((state) => {
-      //   if (state.messages.some(m => m.id === message.id)) return state;
-      //   return { messages: [...state.messages, message] };
-      // });
-      
+    const handleConnect = () => {
+      console.log("Socket connected, joining project:", selectedProject);
+      socket.emit("joinProject", selectedProject);
+
+      const handleMessage = (message) => {
+        console.log(
+          "New message received for project:",
+          selectedProject,
+          message
+        );
+        set((state) => ({
+          messages: [...state.messages, message],
+          isMessageLoading: false,
+        }));
+      };
+
+      socket.on("newMessage", handleMessage);
+
+      socket.on("disconnect", () => {
+        console.log("Socket disconnected, cleaning up listeners");
+        socket.off("newMessage", handleMessage);
+      });
+
+      // Cleanup for unmount or project change
+      return () => {
+        console.log("Cleaning up subscription for project:", selectedProject);
+        socket.off("newMessage", handleMessage);
+        socket.emit("leaveProject", selectedProject);
+      };
     };
 
-    socket.emit("joinProject", selectedProject._id);
-    socket.on("newMessage", handleMessage);
+    if (socket.connected) {
+      console.log("Socket already connected, subscribing immediately");
+      return handleConnect();
+    } else {
+      console.log(
+        "Waiting for socket to connect for project:",
+        selectedProject
+      );
+      socket.connect(); // Force connection attempt
+      socket.on("connect", handleConnect);
+      socket.on("connect_error", (error) => {
+        console.error("Socket connection error:", error);
+      });
 
-    return () => {
-      socket.off("newMessage", handleMessage);
-    };
+      return () => {
+        console.log(
+          "Cleaning up connect listener for project:",
+          selectedProject
+        );
+        socket.off("connect", handleConnect);
+        socket.off("newMessage");
+        socket.emit("leaveProject", selectedProject);
+        socket.disconnect();
+      };
+    }
   },
 
-  unsubscribeFromMessages: () => {
+  unsubscribeFromMessages: (projectId) => {
     const socket = useAuthStore.getState().socket;
     if (socket) {
-      socket.emit("leaveProject");
+      if (projectId) socket.emit("leaveProject", projectId);
       socket.off("newMessage");
     }
   },
-  jsonFormatter: (message)=> {
+  jsonFormatter: (message) => {
     let cleanedText = message?.text || "";
 
     cleanedText = cleanedText
-        .replace(/^```json\n/, '')
-        .replace(/\n```\n$/, '')
-        .trim();
+      .replace(/^```json\n/, "")
+      .replace(/\n```\n$/, "")
+      .trim();
 
     let jsonObject = {};
     try {
-        jsonObject = JSON.parse(cleanedText);
+      jsonObject = JSON.parse(cleanedText);
     } catch (error) {
-        console.error("Error parsing JSON:", error);
+      console.error("Error parsing JSON:", error);
     }
     return jsonObject;
-}
-  
+  },
 }));

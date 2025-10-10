@@ -3,11 +3,10 @@ import { GOOGLE_AI_KEY } from "../configs/server.config.js";
 import { SYSTEM_INSTRUCTION } from "../configs/server.config.js";
 
 const genAI = new GoogleGenerativeAI(GOOGLE_AI_KEY);
-console.log(genAI);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
   generationConfig: {
-    responseMimeType: "application/json",
+    responseMimeType: "text/plain",
     temperature: 0.4,
   },
   systemInstruction: SYSTEM_INSTRUCTION,

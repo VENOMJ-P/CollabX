@@ -54,14 +54,11 @@ export const sendMessage = async (req, res) => {
 
     let imageUrl = null;
 
-    // Upload image to Cloudinary if present
     if (image) {
       try {
         const uploadResult = await cloudinary.uploader.upload(image, {
           folder: "chat_images",
         });
-
-        console.log("image:", uploadResult);
         imageUrl = uploadResult.secure_url;
       } catch (err) {
         console.error("Cloudinary upload failed:", err);
@@ -69,7 +66,6 @@ export const sendMessage = async (req, res) => {
       }
     }
 
-    // Create and save user message
     const newMessage = new Message({
       senderId,
       projectId,
@@ -79,13 +75,12 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // Populate sender details
     const userMessage = await Message.findById(newMessage._id).populate(
       "senderId",
       "fullName profilePic email"
     );
 
-    // Emit the message to all users in the project room
+    // Emit immediately
     io.to(projectId).emit("newMessage", userMessage);
 
     // Check if message is an AI prompt
@@ -93,10 +88,7 @@ export const sendMessage = async (req, res) => {
       const prompt = text.replace("@ai", "").trim();
 
       try {
-        const aiResponse = await generateResult({
-          prompt,
-          image,
-        });
+        const aiResponse = await generateResult({ prompt, image });
 
         if (!aiResponse) {
           return errorResponse(res, 500, "AI failed to generate a response");
@@ -115,10 +107,13 @@ export const sendMessage = async (req, res) => {
           aiMessage._id
         ).populate("senderId", "fullName profilePic email");
 
+
+        // Emit AI response
         io.to(projectId).emit("newMessage", populatedAIMessage);
+        console.log("new message come2", text);
       } catch (aiErr) {
         console.error("AI generation error:", aiErr);
-        return errorResponse(res, 500, "Failed to process AI message");
+        // Don't return error here, user message already sent
       }
     }
 

@@ -20,7 +20,8 @@ export const useAuthStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/users/check");
       set({ authUser: res.data });
-      // get().connectSocket();
+      // Uncomment this line
+      get().connectSocket();
     } catch (error) {
       console.log(error);
       set({ authUser: null });
@@ -60,8 +61,8 @@ export const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.post("/users/login", data);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
-
-      // get().connectSocket();
+      // Uncomment this
+      get().connectSocket();
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -83,25 +84,54 @@ export const useAuthStore = create((set, get) => ({
   },
 
   connectSocket: () => {
-    const { authUser } = get();
+    const { authUser, socket } = get();
     const selectedProject = useProjectStore.getState().selectedProject;
-    if (!authUser || get().socket?.connected || !selectedProject) return;
+    if (!authUser || socket?.connected || !selectedProject) {
+      console.log("Cannot connect socket:", {
+        authUser: !!authUser,
+        socketConnected: socket?.connected,
+        selectedProject: !!selectedProject,
+      });
+      return;
+    }
 
-    console.log("connectSocket", authUser);
+    console.log(
+      "Initializing socket for user:",
+      authUser.data._id,
+      "project:",
+      selectedProject._id
+    );
 
-    const socket = io(BASE_URL, {
+    const newSocket = io(BASE_URL, {
       withCredentials: true,
       query: {
         userId: authUser.data._id,
-        projectId: selectedProject?._id,
+        projectId: selectedProject._id,
       },
+      reconnection: true, // Enable automatic reconnection
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
-    socket.connect();
-    set({ socket: socket });
 
-    socket.on("getOnlineUsers", (userIds) => {
+    newSocket.on("connect", () => {
+      console.log("Socket connected successfully:", newSocket.id);
+      newSocket.emit("joinProject", selectedProject._id);
+    });
+
+    newSocket.on("getOnlineUsers", (userIds) => {
+      console.log("Online users updated:", userIds);
       set({ onlineUsers: userIds });
     });
+
+    newSocket.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
+    set({ socket: newSocket });
   },
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();

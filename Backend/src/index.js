@@ -25,7 +25,7 @@ app.use(limiter);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://cloudinary.com", CLIENT_URL],
+    origin: ["http://localhost:5173", "https://res.cloudinary.com", CLIENT_URL],
     methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
     credentials: true,
   })

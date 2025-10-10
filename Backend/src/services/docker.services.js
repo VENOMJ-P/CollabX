@@ -1,7 +1,6 @@
 import { spawn } from "child_process";
 import fs from "fs";
 import path from "path";
-import { start } from "repl";
 import { v4 as uuidv4 } from "uuid";
 
 class DockerService {
@@ -23,7 +22,12 @@ class DockerService {
     const executionId = uuidv4();
     const executionDir = path.join(this.executionsDir, executionId);
 
-    console.log(files, buildCommand, startCommand);
+    console.log(
+      "Executing code with files:",
+      files,
+      buildCommand,
+      startCommand
+    );
 
     try {
       // Create execution directory
@@ -116,79 +120,117 @@ class DockerService {
       fileExtensions.some((ext) => ext === ".py") ||
       fileNames.includes("requirements.txt");
     const hasJava = fileExtensions.some((ext) => ext === ".java");
+    const hasCpp = fileExtensions.some((ext) =>
+      [".cpp", ".cc", ".cxx"].includes(ext)
+    );
+    const hasC = fileExtensions.some((ext) => ext === ".c");
 
-    const getStartCommand = () => {
+    const getBuildCommand = () => {
       if (
-        startCommand?.commands &&
-        Array.isArray(startCommand.commands) &&
-        startCommand.commands.length > 0
+        buildCommand?.mainItem &&
+        buildCommand.commands &&
+        Array.isArray(buildCommand.commands)
       ) {
-        // Combine mainItem with commands
-        const mainItem = startCommand.mainItem || "";
-        const commands = startCommand.commands;
-
-        if (mainItem) {
-          // If mainItem exists, prepend it to the first command
-          return `${mainItem} ${commands.join(" ")}`;
-        } else {
-          // Otherwise just join the commands
-          return commands.join(" && ");
-        }
+        return `${buildCommand.mainItem} ${buildCommand.commands.join(" ")}`;
       }
       return null;
     };
 
+    const getStartCommand = () => {
+      if (
+        startCommand?.mainItem &&
+        startCommand.commands &&
+        Array.isArray(startCommand.commands)
+      ) {
+        return `${startCommand.mainItem} ${startCommand.commands.join(" ")}`;
+      } else if (
+        startCommand?.commands &&
+        Array.isArray(startCommand.commands)
+      ) {
+        return startCommand.commands.join(" ");
+      }
+      return null;
+    };
+
+    // Extract Java main class name
+    let javaMainClass = "Main";
+    if (hasJava) {
+      for (const [filename, content] of Object.entries(files)) {
+        if (filename.endsWith(".java") && typeof content === "string") {
+          const classMatch = content.match(/public\s+class\s+(\w+)/);
+          if (classMatch && classMatch[1]) {
+            javaMainClass = classMatch[1];
+          }
+        }
+      }
+    }
+
     let dockerfile = "";
+    const buildCmd = getBuildCommand();
     const startCmd = getStartCommand();
 
-    if (hasNodeJs) {
+    if (hasCpp || hasC) {
+      dockerfile = `FROM gcc:latest
+  WORKDIR /app
+  COPY . .
+  
+  # Compile C/C++ files
+  ${buildCmd ? `RUN ${buildCmd}` : `RUN g++ *.cpp *.c -o main`}
+  
+  # Ensure executable permissions
+  RUN chmod +x ./main
+  
+  # Run the code
+  ${startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["./main"]`}`.trim();
+    } else if (hasNodeJs) {
       dockerfile = `FROM node:18-alpine
-WORKDIR /app
-COPY . .
-
-# Install dependencies if package.json exists
-RUN if [ -f package.json ]; then npm install --omit=dev; else true; fi
-
-# Set working directory
-WORKDIR /app
-
-# Run the code
-${
-  startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["node", "index.js"]`
-}`.trim();
+  WORKDIR /app
+  COPY . .
+  
+  # Install dependencies if package.json exists
+  RUN if [ -f package.json ]; then npm install --omit=dev; else true; fi
+  
+  # Run the code
+  ${
+    startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["node", "index.js"]`
+  }`.trim();
     } else if (hasPython) {
       dockerfile = `FROM python:3.11-alpine
-WORKDIR /app
-COPY . .
-
-# Install dependencies if requirements.txt exists
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else true; fi
-
-# Run the code
-${
-  startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["python", "main.py"]`
-}`.trim();
+  WORKDIR /app
+  COPY . .
+  
+  # Install dependencies if requirements.txt exists
+  RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; else true; fi
+  
+  # Run the code
+  ${
+    startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["python", "main.py"]`
+  }`.trim();
     } else if (hasJava) {
+      console.log(buildCommand, startCommand);
+      // Use detected javaMainClass unless startCommand explicitly provides a class
+      const javaStartCmd =
+        startCmd && startCmd !== `java ${javaMainClass}`
+          ? startCmd
+          : `java ${javaMainClass}`;
       dockerfile = `FROM openjdk:17-alpine
-WORKDIR /app
-COPY . .
-
-# Compile Java files
-RUN javac *.java 2>/dev/null || true
-
-# Run the code
-${
-  startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["java", "Main"]`
-}`.trim();
+  WORKDIR /app
+  COPY . .
+  
+  # Compile Java files
+  ${buildCmd ? `RUN ${buildCmd}` : `RUN javac *.java`}
+  
+  # Run the code
+  CMD ["sh", "-c", "${buildCmd}"]`.trim();
     } else {
-      // Default fallback to Node.js
+      // Default to Node.js
       dockerfile = `FROM node:18-alpine
-WORKDIR /app
-COPY . .
-
-${
-  startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["node", "index.js"]`
-}`.trim();
+  WORKDIR /app
+  COPY . .
+  
+  ${
+    startCmd ? `CMD ["sh", "-c", "${startCmd}"]` : `CMD ["node", "index.js"]`
+  }`.trim();
     }
 
     return dockerfile;

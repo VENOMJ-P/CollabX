@@ -58,6 +58,17 @@ io.on("connection", (socket) => {
     Array.from(projectUsersMap[socket.projectId])
   );
 
+  // ADD THESE HANDLERS
+  socket.on("joinProject", (projectId) => {
+    socket.join(projectId);
+    console.log(`User ${socket.userId} explicitly joined project ${projectId}`);
+  });
+
+  socket.on("leaveProject", (projectId) => {
+    socket.leave(projectId);
+    console.log(`User ${socket.userId} left project ${projectId}`);
+  });
+
   // Handle user disconnection
   socket.on("disconnect", () => {
     console.log(`User ${socket.userId} disconnected`);
@@ -65,7 +76,6 @@ io.on("connection", (socket) => {
     if (projectUsersMap[socket.projectId]) {
       projectUsersMap[socket.projectId].delete(socket.userId);
 
-      // Emit before potentially deleting the Set
       io.to(socket.projectId).emit(
         "getOnlineUsers",
         Array.from(projectUsersMap[socket.projectId] || [])
