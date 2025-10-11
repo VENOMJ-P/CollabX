@@ -10,6 +10,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    preview: {
+      host: true,
+      port: 4173,
+      allowedHosts: ["collabx-oud4.onrender.com"],
+    },
     server: {
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
