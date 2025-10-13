@@ -6,10 +6,17 @@ import { CLIENT_URL } from "./server.config.js";
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://res.cloudinary.com",
+  CLIENT_URL,
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://cloudinary.com", CLIENT_URL],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "DELETE", "PATCH", "PUT", "OPTIONS"],
   },
 });
 

@@ -8,36 +8,52 @@ import { CLIENT_URL, PORT } from "./configs/server.config.js";
 import { connectDB } from "./configs/database.config.js";
 import { app, server } from "./configs/socket.config.js";
 
-// const app = express();
-
 const limiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 60 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  windowMs: 60 * 60 * 1000,
+  max: 100,
   message: {
     status: "error",
     message: "Too many requests, please try again later.",
   },
-  standardHeaders: true, // Enables `RateLimit` headers
-  legacyHeaders: false, // Disables `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(limiter);
 
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://res.cloudinary.com", CLIENT_URL],
-    methods: ["GET", "POST", "DELETE", "PATCH", "PUT"],
-    credentials: true,
-  })
-);
+// CORS Configuration - MUST be before routes
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://res.cloudinary.com",
+      CLIENT_URL,
+    ].filter(Boolean); // Remove undefined values
 
-app.use(express.json({ limit: "10mb" })); // Increase JSON payload limit
+    console.log("Request origin:", origin);
+    console.log("Allowed origins:", allowedOrigins);
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "DELETE", "PATCH", "PUT", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Enable preflight for all routes
+
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
-app.use(express.json());
 app.use("/api", appRoutes);
 
 server.listen(PORT, () => {
   console.log("Server is running on port " + PORT);
+  console.log("Client URL:", CLIENT_URL);
   connectDB();
 });

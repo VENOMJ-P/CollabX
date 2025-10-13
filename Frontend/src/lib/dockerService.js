@@ -10,7 +10,9 @@ class DockerService {
   async checkDockerStatus() {
     try {
       const response = await axiosInstance.get("/execution/docker-status");
-      this.isDockerAvailable = response.data.data.available;
+      // Response data structure: { success, message, data: { available }, err }
+      const available = response.data?.data?.available ?? false;
+      this.isDockerAvailable = available;
       return this.isDockerAvailable;
     } catch (error) {
       console.error("Failed to check Docker status:", error);
