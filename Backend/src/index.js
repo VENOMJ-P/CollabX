@@ -8,19 +8,6 @@ import { CLIENT_URL, PORT } from "./configs/server.config.js";
 import { connectDB } from "./configs/database.config.js";
 import { app, server } from "./configs/socket.config.js";
 
-const limiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 100,
-  message: {
-    status: "error",
-    message: "Too many requests, please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use(limiter);
-
 // CORS Configuration - MUST be before routes
 const corsOptions = {
   origin: (origin, callback) => {
@@ -46,6 +33,19 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions)); // Enable preflight for all routes
+
+const limiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 100,
+  message: {
+    status: "error",
+    message: "Too many requests, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));

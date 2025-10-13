@@ -12,11 +12,20 @@ const allowedOrigins = [
   CLIENT_URL,
 ].filter(Boolean);
 
+console.log("Socket.io allowed origins:", allowedOrigins);
+
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"), false);
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "DELETE", "PATCH", "PUT", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   },
 });
 
