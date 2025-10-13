@@ -35,7 +35,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.options("*", cors(corsOptions))); // Enable preflight for all routes
+app.options("*", cors(corsOptions)); // enable preflight requests
 
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
