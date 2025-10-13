@@ -9,6 +9,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://res.cloudinary.com",
+  "https://collabx-oud4.onrender.com", // Your frontend URL
   CLIENT_URL,
 ].filter(Boolean);
 

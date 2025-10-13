@@ -25,6 +25,8 @@ export default defineConfig(({ mode }) => {
           "http://localhost:5173", // frontend dev
           BASE_URL, // your hosted backend URL from .env
           "https://res.cloudinary.com",
+          "https://collabx-40b9.onrender.com",
+          "https://collabx-oud4.onrender.com"
         ],
         credentials: true,
       },

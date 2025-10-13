@@ -9,17 +9,20 @@ import { connectDB } from "./configs/database.config.js";
 import { app, server } from "./configs/socket.config.js";
 
 // CORS Configuration - MUST be before routes
+// CORS Configuration - MUST be before routes
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = [
       "http://localhost:5173",
       "https://res.cloudinary.com",
+      "https://collabx-oud4.onrender.com", // Your frontend URL
       CLIENT_URL,
     ].filter(Boolean); // Remove undefined values
 
     console.log("Request origin:", origin);
     console.log("Allowed origins:", allowedOrigins);
 
+    // Allow requests with no origin (like mobile apps or Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -32,7 +35,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Enable preflight for all routes
+app.use(express.options("*", cors(corsOptions))); // Enable preflight for all routes
 
 const limiter = rateLimit({
   windowMs: 60 * 60 * 1000,
